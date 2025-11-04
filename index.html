@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Domain Valuation Genius</title>
+    <!-- Google tag (gtag.js) - The Measurement ID should be replaced with your own -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      // Replace G-XXXXXXXXXX with your measurement ID.
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;700&family=Montserrat:wght@400;500;600&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#D2B4DE", // Soft Lavender
+                        "background-light": "#fdf7f9",
+                        "background-dark": "#1b151d",
+                        "card-light": "#ffffff",
+                        "card-dark": "#2c262e",
+                        "text-primary": "#3A3541",
+                        "text-secondary": "#6b7280",
+                        "border-light": "#e5e7eb",
+                        "border-dark": "#372c3d",
+                    },
+                    fontFamily: {
+                        "display": ["Lora", "serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "montserrat": ["Montserrat", "sans-serif"],
+                        "nunito": ["Nunito Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.75rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 14px rgba(210,180,222,0.2)',
+                        'ethereal': '0 6px 20px -6px rgba(150, 100, 160, 0.15)',
+                    },
+                    animation: {
+                        'fade-in-up': 'fade-in-up 0.5s ease-out forwards',
+                        'pulse-subtle': 'pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        'fade-in-up': {
+                            '0%': { opacity: '0', transform: 'translateY(-20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        'pulse-subtle': {
+                            '0%, 100%': {
+                                transform: 'scale(1)',
+                                opacity: '0.7',
+                            },
+                            '50%': {
+                                transform: 'scale(1.05)',
+                                opacity: '1',
+                            },
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 700;
+        }
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.5"
+  }
+}
+</script>
+</head>
+<body class="bg-gray-100 dark:bg-zinc-900">
+    <div id="root"></div>
+</body>
+</html>
