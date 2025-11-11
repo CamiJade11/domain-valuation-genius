@@ -7,6 +7,7 @@ const navItems = [
     { path: '/', icon: 'home', label: 'Home', zh_label: '首頁' },
     { path: '/results', icon: 'pie_chart', label: 'Valuations', zh_label: '估價' },
     { path: '/portfolio', icon: 'folder', label: 'Portfolio', zh_label: '投資組合' },
+    { path: '/trends', icon: 'insights', label: 'Trends', zh_label: '趨勢' },
     { path: '/about', icon: 'info', label: 'About', zh_label: '關於' },
 ];
 

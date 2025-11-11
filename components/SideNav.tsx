@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
@@ -5,6 +6,7 @@ const navItems = [
     { path: '/', icon: 'home', label: 'Home' },
     { path: '/results', icon: 'pie_chart', label: 'Valuations' },
     { path: '/portfolio', icon: 'folder', label: 'Portfolio' },
+    { path: '/trends', icon: 'insights', label: 'Trends' },
     { path: '/about', icon: 'info', label: 'About' },
     { path: '/settings', icon: 'settings', label: 'Settings' },
 ];

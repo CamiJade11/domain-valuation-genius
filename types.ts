@@ -1,3 +1,4 @@
+
 export interface Valuation {
     domainName: string;
     estimatedValue: number;
@@ -44,6 +45,7 @@ export interface DomainRecommendation {
     domainName: string;
     estimatedValue: number;
     reason: string;
+    registrar?: string | null;
 }
 
 export interface DomainRecommendationResult {

@@ -1,4 +1,6 @@
 
+
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Valuation, DetailedValuation, BatchValuationResult, HistoricalDataPoint, DomainAvailability, DomainRecommendation } from '../types';
 
@@ -175,41 +177,61 @@ export const getHistoricalValuation = async (domain: string): Promise<Historical
     }
 };
 
-const availabilitySchema = {
-    type: Type.OBJECT,
-    properties: {
-        available: { type: Type.BOOLEAN },
-        registrar: {
-            type: Type.STRING,
-            description: "Name of a popular registrar like GoDaddy or Namecheap if available, otherwise null.",
-            nullable: true,
-        },
-        purchasePrice: {
-            type: Type.NUMBER,
-            description: "Estimated purchase price in USD if available from the registrar, otherwise null. Just a number.",
-            nullable: true,
-        },
-    },
-    required: ["available", "registrar", "purchasePrice"],
-};
-
 export const checkDomainAvailability = async (domain: string): Promise<DomainAvailability> => {
     try {
-        const prompt = `Is the domain name "${domain}" currently available for registration? Check WHOIS records and common registration platforms. If it is available, try to find an estimated purchase price in USD from a popular registrar. Answer with a JSON object.`;
+        const prompt = `Act as a domain availability checker. Your sole purpose is to determine if a domain is available for purchase based on real-time Google Search results.
+Check the domain: "${domain}".
+Analyze search results from top registrars (GoDaddy, Namecheap, etc.).
+
+If you find conclusive evidence of its availability status (either taken or available), respond *only* with a valid JSON object in this exact format:
+{
+  "available": boolean,
+  "registrar": string | null,
+  "purchasePrice": number | null
+}
+
+If the search results are inconclusive or you cannot determine the status with high confidence, respond with this specific JSON object:
+{
+  "available": false,
+  "registrar": null,
+  "purchasePrice": null
+}
+
+Do not add any other text, markdown, or explanations outside of the single JSON object.`;
+        
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
-                responseMimeType: "application/json",
-                responseSchema: availabilitySchema,
+                tools: [{googleSearch: {}}],
             }
         });
 
-        const jsonText = response.text.trim();
-        return JSON.parse(jsonText) as DomainAvailability;
+        const textResponse = response.text;
+        // The model might return a JSON string inside a markdown block, or just the raw string.
+        // It might also include conversational text. We need to find the JSON part.
+        const jsonMatch = textResponse.match(/{[\s\S]*}/);
+
+        if (jsonMatch && jsonMatch[0]) {
+            try {
+                return JSON.parse(jsonMatch[0]) as DomainAvailability;
+            } catch(e) {
+                // This will catch cases where the regex finds something that isn't valid JSON.
+                console.error(`Failed to parse JSON from AI response for ${domain}. Response fragment: "${jsonMatch[0]}"`, e);
+                throw new Error("AI response contained malformed JSON.");
+            }
+        }
+        
+        // If no JSON object is found in the response.
+        console.error(`No JSON object found in AI response for ${domain}. Full response: "${textResponse}"`);
+        throw new Error("AI response did not contain valid JSON.");
+
     } catch (error) {
-        console.error("Error checking domain availability:", error);
-        throw new Error("Failed to check domain availability.");
+        // Log the full error from the API call or parsing
+        console.error(`Error in checkDomainAvailability for ${domain}.`, error);
+        
+        // Return a safe default to the user to prevent app crashes.
+        return { available: false, registrar: null, purchasePrice: null };
     }
 };
 
@@ -234,7 +256,7 @@ const recommendationSchema = {
 
 export const getDomainRecommendations = async (domain: string, value: number): Promise<DomainRecommendation[]> => {
     try {
-        const prompt = `The domain "${domain}" is valued at approximately $${value}. Based on its keywords, niche, and TLD, suggest up to 3 similar domains that could have a higher value and are likely available for registration. For each suggestion, provide a realistic estimated value and a brief reason for the recommendation. The domains should be creative and commercially viable alternatives. Format the response as a JSON object.`;
+        const prompt = `The domain "${domain}" is valued at approximately $${value}. Based on its keywords, niche, and TLD, suggest up to 3 similar domains that could have a higher value and are **very likely to be available for standard registration**. Do not suggest premium or already taken domains. The domains should be creative and commercially viable alternatives. For each suggestion, provide a realistic estimated value and a brief reason for the recommendation. Format the response as a JSON object.`;
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -251,5 +273,46 @@ export const getDomainRecommendations = async (domain: string, value: number): P
     } catch (error) {
         console.error("Error fetching domain recommendations:", error);
         throw new Error("Failed to get domain recommendations from AI.");
+    }
+};
+
+export const getTrendingDomains = async (): Promise<DomainRecommendation[]> => {
+    try {
+        const prompt = `Act as a futurist and domain investment strategist. Your primary goal is to find currently unregistered, available-for-standard-registration domain names based on emerging trends.
+1.  **Analyze Trends**: Use Google Search to analyze emerging technologies (AI, biotech, future of work), recent policy changes (AI regulation, climate policy), and investment trends.
+2.  **Generate Ideas**: Based on your analysis, brainstorm a list of creative, brandable, and commercially viable domain names. Use a variety of modern TLDs (.com, .ai, .io, .tech, .xyz).
+3.  **CRITICAL STEP - VERIFY AVAILABILITY**: This is the most important instruction. For each domain idea, you MUST use Google Search to verify it is available for immediate, standard-price registration. Check multiple registrars like GoDaddy, Namecheap, and Google Domains. A domain is considered **UNAVAILABLE** and you MUST NOT include it if: it has an existing website, it's listed as a "premium" domain, it's for sale on an auction site, or a registrar shows it as taken. If you are not 100% certain it's available for standard registration, discard it and find another one.
+4.  **Format Output**: Return a list of 5 domains that you have **personally verified as available for standard registration**. For each domain, provide its estimated market value, a concise 'reason' for its value, and crucially, the 'registrar' (e.g., "GoDaddy", "Namecheap") where you confirmed its availability. The 'registrar' field is mandatory.
+
+Respond ONLY with a valid JSON object wrapped in markdown \`\`\`json ... \`\`\`. The JSON object must have a single key "recommendations" which is an array of objects, each with "domainName" (string), "estimatedValue" (number), "reason" (string), and "registrar" (string, e.g., "GoDaddy"). If you cannot find any available domains after a thorough search, return an empty "recommendations" array.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                tools: [{googleSearch: {}}],
+            },
+        });
+
+        const textResponse = response.text;
+        // The model might return a JSON string inside a markdown block.
+        const jsonMatch = textResponse.match(/```json\n([\s\S]*?)\n```/);
+
+        if (jsonMatch && jsonMatch[1]) {
+            try {
+                const parsed = JSON.parse(jsonMatch[1]);
+                return parsed.recommendations as DomainRecommendation[];
+            } catch(e) {
+                console.error(`Failed to parse JSON from trending domains response. Response fragment: "${jsonMatch[1]}"`, e);
+                throw new Error("Trending domains response contained malformed JSON.");
+            }
+        }
+        
+        console.error(`No JSON object found in trending domains response. Full response: "${textResponse}"`);
+        throw new Error("Trending domains response did not contain valid JSON.");
+
+    } catch (error) {
+        console.error("Error fetching trending domains:", error);
+        throw new Error("Failed to get trending domains from AI.");
     }
 };

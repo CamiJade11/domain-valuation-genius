@@ -18,6 +18,7 @@ import AboutPage from './pages/AboutPage';
 import { trackPageView } from './services/analytics';
 import SideNav from './components/SideNav';
 import ComparePage from './pages/ComparePage';
+import MarketTrendsPage from './pages/MarketTrendsPage';
 
 
 const App: React.FC = () => {
@@ -65,6 +66,7 @@ const MainContent: React.FC = () => {
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/about" element={<AboutPage />} />
                             <Route path="/compare" element={<ComparePage />} />
+                            <Route path="/trends" element={<MarketTrendsPage />} />
                         </Routes>
                     </main>
                     {showBottomNav && <BottomNav />}
