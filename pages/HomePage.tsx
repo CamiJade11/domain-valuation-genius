@@ -5,18 +5,20 @@ import { useNavigate } from 'react-router-dom';
 import { getBatchValuation } from '../services/geminiService';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+const ESTIMATED_DURATION = 15; // A reasonable estimate for batch valuation
+
 const HomePage: React.FC = () => {
     const [domains, setDomains] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [elapsedTime, setElapsedTime] = useState(0);
+    const [countdown, setCountdown] = useState(ESTIMATED_DURATION);
     const navigate = useNavigate();
     const timerRef = useRef<number | null>(null);
 
     useEffect(() => {
         if (isLoading) {
             timerRef.current = window.setInterval(() => {
-                setElapsedTime(prevTime => prevTime + 1);
+                setCountdown(prev => (prev > 0 ? prev - 1 : 0));
             }, 1000);
         } else {
             if (timerRef.current) {
@@ -39,7 +41,7 @@ const HomePage: React.FC = () => {
             return;
         }
         
-        setElapsedTime(0);
+        setCountdown(ESTIMATED_DURATION);
         setIsLoading(true);
         setError(null);
 
@@ -70,7 +72,12 @@ const HomePage: React.FC = () => {
                     <>
                         Gently analyzing domains with real-time insights...
                         <br/><span className="text-xs">正在以即時洞察力細心分析域名...</span>
-                        <br/><br/><span className="text-xs text-gray-500 dark:text-gray-400">Time elapsed: {elapsedTime} seconds</span>
+                        <br/><br/>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {countdown > 0
+                                ? `Estimated time remaining: ${countdown} seconds`
+                                : `Finalizing results, just a moment...`}
+                        </span>
                     </>
                 } />
             ) : (

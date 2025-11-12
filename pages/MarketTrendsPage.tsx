@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { getTrendingDomains } from '../services/geminiService';
 import { DomainRecommendation, DomainAvailability } from '../types';
@@ -10,19 +7,31 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 type TrendResult = DomainRecommendation & { availability: DomainAvailability };
 
+const industries = [
+    'Artificial Intelligence',
+    'Biotechnology',
+    'Finance & Web3',
+    'E-commerce',
+    'Sustainability',
+    'Future of Work',
+];
+
+const ESTIMATED_DURATION = 25; // Estimate in seconds for the trend analysis
+
 const MarketTrendsPage: React.FC = () => {
     const [recommendations, setRecommendations] = useState<TrendResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [elapsedTime, setElapsedTime] = useState(0);
+    const [countdown, setCountdown] = useState(ESTIMATED_DURATION);
     const timerRef = useRef<number | null>(null);
     const { addValuations } = usePortfolio();
     const { showToast } = useToast();
+    const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
 
     useEffect(() => {
         if (isLoading) {
             timerRef.current = window.setInterval(() => {
-                setElapsedTime(prevTime => prevTime + 1);
+                setCountdown(prevTime => (prevTime > 0 ? prevTime - 1 : 0));
             }, 1000);
         } else if (timerRef.current) {
             clearInterval(timerRef.current);
@@ -32,12 +41,12 @@ const MarketTrendsPage: React.FC = () => {
     }, [isLoading]);
 
     const handleDiscover = async () => {
-        setElapsedTime(0);
+        setCountdown(ESTIMATED_DURATION);
         setIsLoading(true);
         setError(null);
         setRecommendations([]);
         try {
-            const trendResults = await getTrendingDomains();
+            const trendResults = await getTrendingDomains(selectedIndustry);
             
             if (trendResults.length === 0) {
                  setError("No available trending domains found right now. Try again later!");
@@ -79,18 +88,39 @@ const MarketTrendsPage: React.FC = () => {
     };
 
     return (
-        <div className="flex-1 flex flex-col pt-16 pb-24">
-            <header className="px-4 text-center pb-8">
+        <div className="flex-1 flex flex-col pt-12 pb-24">
+            <header className="px-4 text-center pb-6">
                 <h1 className="font-display text-3xl font-bold tracking-tight">Market Trend Analysis</h1>
                 <p className="text-text-secondary dark:text-gray-400 text-sm mt-1">市場趨勢分析</p>
                 <p className="text-text-secondary dark:text-gray-300 text-base leading-normal pt-4 max-w-sm mx-auto">
-                    Our AI analyzes global trends in tech, policy, and finance to recommend available domains poised for growth in the next 6 months.
-                    <br/><span className="text-sm">我們的人工智慧分析全球科技、政策和金融趨勢，推薦未來 6 個月內具有增長潛力的可用域名。</span>
+                    Let our AI discover high-potential, available domains based on the latest global trends.
+                    <br/><span className="text-sm">讓我們的人工智慧根據最新的全球趨勢，為您發現高潛力的可用域名。</span>
                 </p>
             </header>
             <main className="flex-grow px-4">
                 {!isLoading && recommendations.length === 0 && (
                     <div className="flex flex-col items-center justify-center text-center">
+                         <div className="w-full max-w-sm mb-6">
+                            <p className="text-sm text-text-secondary dark:text-gray-400 mb-3">
+                                Focus the search on an industry (optional):
+                                <br/><span className="text-xs">專注於某個行業進行搜索（可選）：</span>
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-2">
+                                {industries.map((industry) => (
+                                    <button
+                                        key={industry}
+                                        onClick={() => setSelectedIndustry(prev => prev === industry ? null : industry)}
+                                        className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+                                            selectedIndustry === industry
+                                                ? 'bg-primary text-white shadow-soft'
+                                                : 'bg-primary/10 text-primary hover:bg-primary/20 dark:bg-card-dark dark:border dark:border-border-dark dark:text-gray-200 dark:hover:bg-zinc-700'
+                                        }`}
+                                    >
+                                        {industry}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                          <div className="flex w-full max-w-sm flex-col items-center gap-3">
                              <button onClick={handleDiscover} className="flex h-16 w-full cursor-pointer items-center justify-center rounded-lg bg-primary py-4 px-6 text-lg font-bold text-white shadow-soft transition-transform duration-200 ease-in-out hover:scale-105">
                                  <div className="text-center">
@@ -110,7 +140,12 @@ const MarketTrendsPage: React.FC = () => {
                         <>
                             Analyzing trends & checking availability...
                             <br/><span className="text-xs">正在分析趨勢並檢查可用性...</span>
-                            <br/><br/><span className="text-xs text-gray-500 dark:text-gray-400">Time elapsed: {elapsedTime} seconds</span>
+                            <br/><br/>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {countdown > 0
+                                    ? `Estimated time remaining: ${countdown} seconds`
+                                    : `Finalizing results, just a moment...`}
+                            </span>
                         </>
                     } />
                 )}

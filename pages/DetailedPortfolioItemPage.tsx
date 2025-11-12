@@ -15,6 +15,8 @@ type AvailabilityStatus = {
     error: string | null;
 };
 
+const ESTIMATED_DURATION = 12; // Estimate for detailed report generation
+
 const StatRow: React.FC<{ label: string; zh_label: string; value: string | number; currency?: boolean, onInfoClick?: () => void }> = ({ label, zh_label, value, currency = false, onInfoClick }) => (
     <div className="flex justify-between items-center gap-x-6 py-2">
         <div className="flex items-center gap-2">
@@ -51,7 +53,7 @@ const DetailedPortfolioItemPage: React.FC = () => {
     const { getValuation, addDetailedValuation } = usePortfolio();
     const [details, setDetails] = useState<DetailedValuation | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [elapsedTime, setElapsedTime] = useState(0);
+    const [countdown, setCountdown] = useState(ESTIMATED_DURATION);
     const timerRef = useRef<number | null>(null);
     const [recommendations, setRecommendations] = useState<DomainRecommendation[]>([]);
     const [isLoadingRecs, setIsLoadingRecs] = useState(true);
@@ -91,7 +93,7 @@ const DetailedPortfolioItemPage: React.FC = () => {
     useEffect(() => {
         if (isLoading) {
             timerRef.current = window.setInterval(() => {
-                setElapsedTime(prevTime => prevTime + 1);
+                setCountdown(prevTime => (prevTime > 0 ? prevTime - 1 : 0));
             }, 1000);
         } else {
             if (timerRef.current) {
@@ -113,7 +115,7 @@ const DetailedPortfolioItemPage: React.FC = () => {
 
             // Reset states for the new fetch
             setIsLoading(true);
-            setElapsedTime(0);
+            setCountdown(ESTIMATED_DURATION);
             
             const fetchDetails = async () => {
                 const existingData = getValuation(domainName);
@@ -205,7 +207,12 @@ const DetailedPortfolioItemPage: React.FC = () => {
                 <>
                     Gently preparing your in-depth report...
                     <br/><span className="text-xs">正在精心準備您的深度報告...</span>
-                    <br/><br/><span className="text-xs text-gray-500 dark:text-gray-400">Time elapsed: {elapsedTime} seconds</span>
+                    <br/><br/>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {countdown > 0
+                            ? `Estimated time remaining: ${countdown} seconds`
+                            : `Finalizing results, just a moment...`}
+                    </span>
                 </>
             } />
         </div>

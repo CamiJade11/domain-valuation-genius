@@ -276,18 +276,37 @@ export const getDomainRecommendations = async (domain: string, value: number): P
     }
 };
 
-export const getTrendingDomains = async (): Promise<DomainRecommendation[]> => {
+export const getTrendingDomains = async (industry: string | null = null): Promise<DomainRecommendation[]> => {
     try {
-        const prompt = `Act as a futurist and domain investment strategist. Your primary goal is to find currently unregistered, available-for-standard-registration domain names based on emerging trends.
-1.  **Analyze Trends**: Use Google Search to analyze emerging technologies (AI, biotech, future of work), recent policy changes (AI regulation, climate policy), and investment trends.
-2.  **Generate Ideas**: Based on your analysis, brainstorm a list of creative, brandable, and commercially viable domain names. Use a variety of modern TLDs (.com, .ai, .io, .tech, .xyz).
-3.  **CRITICAL STEP - VERIFY AVAILABILITY**: This is the most important instruction. For each domain idea, you MUST use Google Search to verify it is available for immediate, standard-price registration. Check multiple registrars like GoDaddy, Namecheap, and Google Domains. A domain is considered **UNAVAILABLE** and you MUST NOT include it if: it has an existing website, it's listed as a "premium" domain, it's for sale on an auction site, or a registrar shows it as taken. If you are not 100% certain it's available for standard registration, discard it and find another one.
-4.  **Format Output**: Return a list of 5 domains that you have **personally verified as available for standard registration**. For each domain, provide its estimated market value, a concise 'reason' for its value, and crucially, the 'registrar' (e.g., "GoDaddy", "Namecheap") where you confirmed its availability. The 'registrar' field is mandatory.
+        const prompt = `Act as a domain investment strategist. Your task is to identify 5 high-potential, available domain names based on emerging market trends.
+1. Use Google Search to research current trends. ${industry ? `Focus specifically on the **${industry}** sector.` : 'Focus on tech, finance, and sustainability.'}
+2. For each trend, brainstorm creative and brandable domain names with TLDs like .com, .ai, .io, .tech.
+3. **Verify Availability**: Use Google Search again to check if each brainstormed domain is likely available for standard registration. Discard any that are clearly taken, premium, or for sale at auction.
+4. **Format Output**: Return your findings as a JSON object inside a markdown code block.
 
-Respond ONLY with a valid JSON object wrapped in markdown \`\`\`json ... \`\`\`. The JSON object must have a single key "recommendations" which is an array of objects, each with "domainName" (string), "estimatedValue" (number), "reason" (string), and "registrar" (string, e.g., "GoDaddy"). If you cannot find any available domains after a thorough search, return an empty "recommendations" array.`;
+The JSON object must have a key "recommendations" containing an array of up to 5 domain objects. Each object must have:
+- "domainName" (string)
+- "estimatedValue" (number)
+- "reason" (string, explaining its value based on trends)
+- "registrar" (string, e.g., "Namecheap", where availability was checked)
+
+Your entire response must be ONLY the JSON object inside a markdown code block, like this:
+\`\`\`json
+{
+  "recommendations": [
+    {
+      "domainName": "example.ai",
+      "estimatedValue": 5000,
+      "reason": "Tied to the growing AI trend.",
+      "registrar": "GoDaddy"
+    }
+  ]
+}
+\`\`\`
+If no domains are found, return an empty "recommendations" array.`;
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-pro",
             contents: prompt,
             config: {
                 tools: [{googleSearch: {}}],
@@ -296,7 +315,7 @@ Respond ONLY with a valid JSON object wrapped in markdown \`\`\`json ... \`\`\`.
 
         const textResponse = response.text;
         // The model might return a JSON string inside a markdown block.
-        const jsonMatch = textResponse.match(/```json\n([\s\S]*?)\n```/);
+        const jsonMatch = textResponse.match(/```json\s*([\s\S]*?)\s*```/);
 
         if (jsonMatch && jsonMatch[1]) {
             try {
